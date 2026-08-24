@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="dark" />
+  <title>题库审片室｜理想型·加载中</title>
+  <link rel="stylesheet" href="./question-review.css" />
+</head>
+<body>
+  <div class="ambient ambient-a" aria-hidden="true"></div>
+  <div class="ambient ambient-b" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand-block">
+      <div class="brand-kicker">理想型·加载中</div>
+      <h1>题库审片室</h1>
+      <p>全库审题。像刷卡片一样，保留、改写或删除。</p>
+    </div>
+    <div class="save-state" id="saveState" role="status">
+      <span class="save-dot" aria-hidden="true"></span>
+      <span>反馈自动保存在这台设备</span>
+    </div>
+  </header>
+
+  <section class="calibration-shell" id="calibrationShell">
+    <button class="calibration-toggle" id="calibrationToggle" type="button" aria-expanded="true" aria-controls="calibrationBody">
+      <span>
+        <span class="eyebrow">先告诉我边界</span>
+        <strong>尺度校准</strong>
+        <small id="calibrationSummary">约 1 分钟，只需设置一次</small>
+      </span>
+      <span class="toggle-icon" aria-hidden="true">⌃</span>
+    </button>
+    <div class="calibration-body" id="calibrationBody">
+      <div class="calibration-grid">
+        <fieldset class="field-group">
+          <legend>这套题主要在哪种场合被念出来？</legend>
+          <div class="segmented vertical-on-mobile" id="venueOptions">
+            <label><input type="radio" name="venue" value="friends" /><span>普通朋友局</span></label>
+            <label><input type="radio" name="venue" value="close" /><span>熟人成人局</span></label>
+            <label><input type="radio" name="venue" value="private" /><span>私密成人局</span></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="field-group">
+          <legend>最重可以走到哪一级？</legend>
+          <div class="scale-row">
+            <input id="maxSpice" type="range" min="1" max="5" step="1" value="3" />
+            <output id="maxSpiceOutput" for="maxSpice">3 · 有成人暗示，但不露骨</output>
+          </div>
+        </fieldset>
+      </div>
+
+      <fieldset class="field-group boundaries-group">
+        <legend>哪些内容一碰就应该删？<small>可多选</small></legend>
+        <div class="chip-grid" id="hardLimitOptions">
+          <label><input type="checkbox" value="强迫或非自愿" /><span>强迫或非自愿</span></label>
+          <label><input type="checkbox" value="真实隐私曝光" /><span>真实隐私曝光</span></label>
+          <label><input type="checkbox" value="职权性骚扰" /><span>职权性骚扰</span></label>
+          <label><input type="checkbox" value="歧视或羞辱" /><span>歧视或羞辱</span></label>
+          <label><input type="checkbox" value="排泄物" /><span>排泄物</span></label>
+          <label><input type="checkbox" value="露骨器官描写" /><span>露骨器官描写</span></label>
+          <label><input type="checkbox" value="出轨或多人关系" /><span>出轨或多人关系</span></label>
+        </div>
+      </fieldset>
+
+      <label class="text-field">
+        <span>还有一句话说不清的尺度</span>
+        <textarea id="calibrationNote" rows="2" placeholder="例如：可以荤，但必须好笑；不能让人觉得被冒犯。"></textarea>
+      </label>
+
+      <div class="calibration-actions">
+        <button class="button primary small" id="saveCalibration" type="button">保存尺度，开始审题</button>
+        <span class="quiet">以后可以随时回来改</span>
+      </div>
+    </div>
+  </section>
+
+  <main class="workspace">
+    <aside class="sidebar" aria-label="题库筛选与导出">
+      <section class="side-section overview-section">
+        <div class="section-heading">
+          <span>总进度</span>
+          <strong id="progressPercent">0%</strong>
+        </div>
+        <div class="progress-track" aria-hidden="true"><span id="progressBar"></span></div>
+        <div class="count-grid">
+          <button type="button" data-status-filter="keep"><b id="keepCount">0</b><span>保留</span></button>
+          <button type="button" data-status-filter="revise"><b id="reviseCount">0</b><span>改写</span></button>
+          <button type="button" data-status-filter="delete"><b id="deleteCount">0</b><span>删除</span></button>
+          <button type="button" data-status-filter="skipped"><b id="skippedCount">0</b><span>稍后</span></button>
+        </div>
+        <p class="pending-line"><span id="doneCount">0</span> / <span id="totalCount">1467</span> 已定稿，<span id="pendingCount">1467</span> 题待定</p>
+      </section>
+
+      <section class="side-section filters-section">
+        <div class="section-heading"><span>筛选</span><button class="text-button" id="resetFilters" type="button">重置</button></div>
+        <label class="select-field"><span>题库</span><select id="moduleFilter"></select></label>
+        <label class="select-field"><span>档位</span><select id="deckFilter"></select></label>
+        <label class="select-field"><span>题池</span><select id="poolFilter"></select></label>
+        <label class="select-field"><span>状态</span>
+          <select id="statusFilter">
+            <option value="all">全部题目</option>
+            <option value="pending">只看待审</option>
+            <option value="needs_action">No 后未处理</option>
+            <option value="skipped">稍后再审</option>
+            <option value="keep">已保留</option>
+            <option value="revise">已改写</option>
+            <option value="delete">已删除</option>
+          </select>
+        </label>
+        <label class="search-field"><span class="sr-only">搜索题目</span><input id="searchInput" type="search" placeholder="搜题目、标签或 ID" /></label>
+      </section>
+
+      <section class="side-section data-section">
+        <div class="section-heading"><span>反馈文件</span></div>
+        <p>审完不必复制文字。导出 JSON 发给我，我会按你的选择、改写和尺度继续迭代。</p>
+        <div class="side-actions">
+          <button class="button primary" id="exportJson" type="button">导出反馈给 Codex</button>
+          <button class="button secondary" id="exportCsv" type="button">导出表格 CSV</button>
+          <label class="button secondary file-button">导入反馈继续<input id="importJson" type="file" accept="application/json,.json" /></label>
+        </div>
+      </section>
+
+      <details class="side-section help-section">
+        <summary>快捷键</summary>
+        <div class="shortcut-list">
+          <span><kbd>Y</kbd> 原样保留</span>
+          <span><kbd>N</kbd> 原题不行</span>
+          <span><kbd>S</kbd> 稍后再审</span>
+          <span><kbd>←</kbd><kbd>→</kbd> 上一题 / 下一题</span>
+        </div>
+      </details>
+    </aside>
+
+    <section class="review-stage" aria-live="polite">
+      <div class="stage-toolbar">
+        <div class="position" id="positionLabel">第 1 / 570 题</div>
+        <div class="variant-switch" aria-label="题面版本">
+          <button type="button" data-variant="m">男版</button>
+          <button type="button" data-variant="f">女版</button>
+          <button type="button" data-variant="n" class="active">TA版</button>
+        </div>
+        <div class="nav-buttons">
+          <button id="prevQuestion" type="button" aria-label="上一题">←</button>
+          <button id="nextQuestion" type="button" aria-label="下一题">→</button>
+        </div>
+      </div>
+
+      <article class="question-card" id="questionCard">
+        <div class="card-status-row">
+          <div class="meta-pills" id="metaPills"></div>
+          <span class="review-status pending" id="reviewStatus">待审</span>
+        </div>
+
+        <div class="question-copy">
+          <span class="question-prefix" id="questionPrefix">这是一个满分的 TA，但是——</span>
+          <h2 id="questionText">题目加载中…</h2>
+        </div>
+
+        <div class="question-details">
+          <span id="questionId">ID</span>
+          <span id="questionTags">标签</span>
+        </div>
+
+        <div class="decision-block" id="decisionBlock">
+          <p class="decision-prompt">这道题成立吗？</p>
+          <div class="primary-decisions">
+            <button class="decision-button yes" id="keepButton" type="button">
+              <span class="decision-word">YES</span>
+              <span>原样保留</span>
+              <kbd>Y</kbd>
+            </button>
+            <button class="decision-button no" id="noButton" type="button">
+              <span class="decision-word">NO</span>
+              <span>原题不行</span>
+              <kbd>N</kbd>
+            </button>
+          </div>
+          <button class="skip-button" id="skipButton" type="button"><span>跳过 · 现在不判断，稍后再审</span><kbd>S</kbd></button>
+        </div>
+
+        <section class="no-panel" id="noPanel" hidden>
+          <div class="no-panel-heading">
+            <div><span class="eyebrow">NO 之后再决定</span><h3>改得动，还是整题不要？</h3></div>
+            <button class="icon-button" id="closeNoPanel" type="button" aria-label="关闭">×</button>
+          </div>
+
+          <fieldset class="field-group">
+            <legend>哪里不对？<small>可多选</small></legend>
+            <div class="reason-grid" id="reasonOptions">
+              <button type="button" data-reason="看不懂">看不懂</button>
+              <button type="button" data-reason="没画面">没画面</button>
+              <button type="button" data-reason="不好笑">不好笑</button>
+              <button type="button" data-reason="太长">太长</button>
+              <button type="button" data-reason="太旧或没网感">太旧 / 没网感</button>
+              <button type="button" data-reason="重复">和别题重复</button>
+              <button type="button" data-reason="不舒服或冒犯">不舒服 / 冒犯</button>
+              <button type="button" data-reason="尺度不对">尺度不对</button>
+            </div>
+          </fieldset>
+
+          <fieldset class="field-group">
+            <legend>如果是尺度问题，它现在……</legend>
+            <div class="segmented scale-choice" id="scaleOptions">
+              <button type="button" data-scale="too_soft">太浅，没意思</button>
+              <button type="button" data-scale="right">尺度没错，是题差</button>
+              <button type="button" data-scale="too_far">太过，不想念</button>
+            </div>
+          </fieldset>
+
+          <label class="text-field edit-field">
+            <span>我来改这道题 <small id="editVariantLabel">正在改 TA 版</small></span>
+            <textarea id="rewriteInput" rows="4"></textarea>
+            <small class="edit-hint">只要写出你认为对的那一句；其他性别版本我后续按你的意思统一。</small>
+          </label>
+
+          <label class="text-field">
+            <span>补充一句原因 <small>可不填</small></span>
+            <input id="reviewNote" type="text" placeholder="例如：这个梗现实里没人会这样说" />
+          </label>
+
+          <div class="no-actions">
+            <button class="button revise-action" id="saveRewrite" type="button">保存改写后保留</button>
+            <button class="button delete-action" id="deleteQuestion" type="button">整题删除</button>
+          </div>
+          <p class="validation-message" id="validationMessage" role="alert"></p>
+        </section>
+      </article>
+
+      <div class="empty-state" id="emptyState" hidden>
+        <div class="empty-icon">✓</div>
+        <h2>这个筛选下没有题了</h2>
+        <p>你可以切回“全部题目”，或专门查看稍后再审的题。</p>
+        <button class="button primary" id="showAllQuestions" type="button">查看全部题目</button>
+      </div>
+
+      <div class="undo-bar" id="undoBar" hidden>
+        <span id="undoMessage">已记录</span>
+        <button id="undoButton" type="button">撤销</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="./question-review.js"></script>
+</body>
+</html>
